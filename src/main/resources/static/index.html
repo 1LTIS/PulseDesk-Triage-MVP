@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PulseDesk Triage Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+</head>
+<body>
+    <h1>PulseDesk Triage Console</h1>
+    
+    <h3>Submit Feedback</h3>
+    <form id="commentForm">
+        <textarea id="content" placeholder="Type user comment here..." required></textarea>
+        <input type="text" id="channel" placeholder="Channel (e.g., App Store, Chat)" required>
+        <button type="submit">Submit Comment</button>
+    </form>
+
+    <hr>
+    
+    <h3>Generated Tickets</h3>
+    <button onclick="loadTickets()">Refresh Tickets</button>
+    <div id="ticketsList"></div>
+
+    <script>
+        document.getElementById('commentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                content: document.getElementById('content').value,
+                channel: document.getElementById('channel').value
+            };
+            
+            await fetch('/api/comments', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            alert('Comment submitted! Processing triage...');
+            document.getElementById('commentForm').reset();
+            loadTickets();
+        });
+
+        async function loadTickets() {
+            const res = await fetch('/api/tickets');
+            const tickets = await res.json();
+            const container = document.getElementById('ticketsList');
+            container.innerHTML = '';
+            
+            tickets.forEach(t => {
+                container.innerHTML += `
+                    <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                        <h4>[${t.category.toUpperCase()}] ${t.title} - <span style="color:red">${t.priority}</span></h4>
+                        <p><strong>Summary:</strong> ${t.summary}</p>
+                        <small>Source Comment: "${t.originComment.content}"</small>
+                    </div>
+                `;
+            });
+        }
+        window.onload = loadTickets;
+    </script>
+</body>
+</html>
